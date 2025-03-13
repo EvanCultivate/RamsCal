@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, startOfDay, addHours, addWeeks, subWeeks, endOfWeek } from 'date-fns';
-import { CalendarEvent } from '../types/calendar';
+import { CalendarEvent, NewCalendarEvent } from '../types/calendar';
 import { calendarService } from '../services/calendarService';
 import EventForm from './EventForm';
 import EventDetails from './EventDetails';
@@ -54,13 +54,9 @@ export default function Calendar() {
     setSelectedEvent(event);
   };
 
-  const handleEventSubmit = async (eventData: Omit<CalendarEvent, 'id'>) => {
-    const newEvent: CalendarEvent = {
-      ...eventData,
-      id: crypto.randomUUID()
-    };
-
-    if (await calendarService.addEvent(newEvent)) {
+  const handleEventSubmit = async (eventData: NewCalendarEvent) => {
+    const success = await calendarService.addEvent(eventData);
+    if (success) {
       await loadEvents();
       setSelectedSlot(null);
     }

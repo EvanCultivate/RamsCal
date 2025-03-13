@@ -1,4 +1,4 @@
-import { CalendarEvent, CalendarEvents } from '../types/calendar';
+import { CalendarEvent, CalendarEvents, NewCalendarEvent } from '../types/calendar';
 
 export const calendarService = {
   getAllEvents: async (): Promise<CalendarEvents> => {
@@ -24,15 +24,22 @@ export const calendarService = {
     }
   },
 
-  addEvent: async (event: CalendarEvent): Promise<boolean> => {
+  addEvent: async (event: NewCalendarEvent): Promise<boolean> => {
     try {
       console.log('Attempting to create event:', event);
+      const fullEvent: CalendarEvent = {
+        ...event,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
       const response = await fetch('/api/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(event),
+        body: JSON.stringify(fullEvent),
       });
 
       console.log('Create event response:', {

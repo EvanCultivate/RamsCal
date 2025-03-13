@@ -12,4 +12,6 @@ export interface CalendarEvent {
 
 export type CalendarEvents = {
   [key: string]: CalendarEvent; // key is the event ID
-}; 
+};
+
+export type NewCalendarEvent = Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>; 

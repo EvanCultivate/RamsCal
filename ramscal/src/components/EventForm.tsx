@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { CalendarEvent } from '../types/calendar';
+import { CalendarEvent, NewCalendarEvent } from '../types/calendar';
 
 interface EventFormProps {
   start: Date;
   end: Date;
-  onSubmit: (event: Omit<CalendarEvent, 'id'>) => void;
+  onSubmit: (event: NewCalendarEvent) => void;
   onCancel: () => void;
   event?: CalendarEvent;
 }
