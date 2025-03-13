@@ -3,9 +3,11 @@ export interface CalendarEvent {
   title: string;
   start: string; // ISO string
   end: string; // ISO string
-  location: string;
-  attendee: string;
-  notes?: string;
+  description: string | null;
+  location: string | null;
+  attendees: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type CalendarEvents = {

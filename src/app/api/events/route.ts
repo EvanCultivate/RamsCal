@@ -2,14 +2,7 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { CalendarEvent } from '@/types/calendar';
 
-// Create a single PrismaClient instance and reuse it
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+const prisma = new PrismaClient();
 
 // Helper function to check for event overlap
 async function hasOverlap(newEvent: CalendarEvent, excludeId?: string): Promise<boolean> {
@@ -44,31 +37,18 @@ async function hasOverlap(newEvent: CalendarEvent, excludeId?: string): Promise<
 
 // GET /api/events
 export async function GET() {
-  console.log('GET /api/events - Starting request');
   try {
-    console.log('Attempting to connect to database...');
     const events = await prisma.calendarEvent.findMany();
-    console.log(`Successfully fetched ${events.length} events`);
-    
     // Convert to the expected format
     const eventsMap = events.reduce((acc, event) => {
-      acc[event.id] = {
-        ...event,
-        start: event.start.toISOString(),
-        end: event.end.toISOString(),
-        createdAt: event.createdAt.toISOString(),
-        updatedAt: event.updatedAt.toISOString(),
-      };
+      acc[event.id] = event;
       return acc;
     }, {} as Record<string, CalendarEvent>);
     
     return NextResponse.json(eventsMap);
   } catch (error) {
-    console.error('Error in GET /api/events:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch events', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    console.error('Error fetching events:', error);
+    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
   }
 }
 
@@ -77,7 +57,11 @@ export async function POST(request: Request) {
   console.log('POST /api/events - Starting request');
   try {
     const newEvent: CalendarEvent = await request.json();
-    console.log('Received event data:', newEvent);
+    console.log('Received event data:', {
+      ...newEvent,
+      attendeesLength: newEvent.attendees?.length,
+      attendeesContent: newEvent.attendees
+    });
     
     // Validate required fields
     if (!newEvent.title || !newEvent.start || !newEvent.end) {
@@ -98,7 +82,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('Creating event in database...');
+    console.log('Creating event in database with attendees:', newEvent.attendees);
     const createdEvent = await prisma.calendarEvent.create({
       data: {
         title: newEvent.title,
@@ -109,7 +93,11 @@ export async function POST(request: Request) {
         attendees: newEvent.attendees || []
       }
     });
-    console.log('Event created successfully:', createdEvent);
+    console.log('Event created successfully:', {
+      ...createdEvent,
+      attendeesLength: createdEvent.attendees?.length,
+      attendeesContent: createdEvent.attendees
+    });
 
     const formattedEvent = {
       ...createdEvent,
@@ -150,24 +138,14 @@ export async function PUT(request: Request) {
       data: {
         ...updatedEvent,
         start: new Date(updatedEvent.start),
-        end: new Date(updatedEvent.end),
-        attendees: updatedEvent.attendees || []
+        end: new Date(updatedEvent.end)
       }
     });
 
-    return NextResponse.json({
-      ...event,
-      start: event.start.toISOString(),
-      end: event.end.toISOString(),
-      createdAt: event.createdAt.toISOString(),
-      updatedAt: event.updatedAt.toISOString(),
-    });
+    return NextResponse.json(event);
   } catch (error) {
     console.error('Error updating event:', error);
-    return NextResponse.json(
-      { error: 'Failed to update event', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update event' }, { status: 500 });
   }
 }
 
@@ -191,9 +169,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting event:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete event', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
   }
 } 

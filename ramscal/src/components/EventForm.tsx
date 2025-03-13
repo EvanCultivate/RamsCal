@@ -14,8 +14,9 @@ export default function EventForm({ start, end, onSubmit, onCancel, event }: Eve
   const [formData, setFormData] = useState({
     title: event?.title || '',
     location: event?.location || '',
-    attendee: event?.attendee || '',
-    notes: event?.notes || '',
+    description: event?.description || '',
+    attendees: event?.attendees || [],
+    attendeeInput: '',
     start: format(start, "yyyy-MM-dd'T'HH:mm"),
     end: format(end, "yyyy-MM-dd'T'HH:mm")
   });
@@ -24,12 +25,30 @@ export default function EventForm({ start, end, onSubmit, onCancel, event }: Eve
     e.preventDefault();
     onSubmit({
       title: formData.title,
-      location: formData.location,
-      attendee: formData.attendee,
-      notes: formData.notes,
+      location: formData.location || null,
+      description: formData.description || null,
+      attendees: formData.attendees,
       start: new Date(formData.start).toISOString(),
       end: new Date(formData.end).toISOString()
     });
+  };
+
+  const handleAddAttendee = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && formData.attendeeInput.trim()) {
+      e.preventDefault();
+      setFormData(prev => ({
+        ...prev,
+        attendees: [...prev.attendees, prev.attendeeInput.trim()],
+        attendeeInput: ''
+      }));
+    }
+  };
+
+  const handleRemoveAttendee = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      attendees: prev.attendees.filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -55,7 +74,6 @@ export default function EventForm({ start, end, onSubmit, onCancel, event }: Eve
             <label className="block text-sm font-medium text-pink-400">Location</label>
             <input
               type="text"
-              required
               className="mt-1 block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-300 focus:ring-pink-300 text-pink-500"
               value={formData.location}
               onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
@@ -63,14 +81,46 @@ export default function EventForm({ start, end, onSubmit, onCancel, event }: Eve
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-pink-400">Attendee</label>
-            <input
-              type="text"
-              required
+            <label className="block text-sm font-medium text-pink-400">Description</label>
+            <textarea
               className="mt-1 block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-300 focus:ring-pink-300 text-pink-500"
-              value={formData.attendee}
-              onChange={e => setFormData(prev => ({ ...prev, attendee: e.target.value }))}
+              value={formData.description}
+              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              rows={3}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-pink-400">Attendees</label>
+            <div className="mt-1 space-y-2">
+              <input
+                type="text"
+                placeholder="Press Enter to add attendee"
+                className="block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-300 focus:ring-pink-300 text-pink-500"
+                value={formData.attendeeInput}
+                onChange={e => setFormData(prev => ({ ...prev, attendeeInput: e.target.value }))}
+                onKeyDown={handleAddAttendee}
+              />
+              {formData.attendees.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.attendees.map((attendee, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm bg-pink-100 text-pink-500"
+                    >
+                      {attendee}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAttendee(index)}
+                        className="ml-1 text-pink-400 hover:text-pink-600"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
@@ -92,16 +142,6 @@ export default function EventForm({ start, end, onSubmit, onCancel, event }: Eve
               className="mt-1 block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-300 focus:ring-pink-300 text-pink-500"
               value={formData.end}
               onChange={e => setFormData(prev => ({ ...prev, end: e.target.value }))}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-pink-400">Notes</label>
-            <textarea
-              className="mt-1 block w-full rounded-md border-pink-200 shadow-sm focus:border-pink-300 focus:ring-pink-300 text-pink-500"
-              value={formData.notes}
-              onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              rows={3}
             />
           </div>
 

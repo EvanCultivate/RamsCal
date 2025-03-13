@@ -2,22 +2,42 @@ import { CalendarEvent, CalendarEvents } from '../types/calendar';
 
 export const calendarService = {
   getAllEvents: async (): Promise<CalendarEvents> => {
-    const response = await fetch('/api/events');
-    if (!response.ok) {
-      throw new Error('Failed to fetch events');
+    try {
+      const response = await fetch('/api/events');
+      console.log('API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+      }
+
+      const events = await response.json();
+      console.log('Events received:', events);
+      return events;
+    } catch (error) {
+      console.error('Error in getAllEvents:', error);
+      throw error;
     }
-    const events = await response.json();
-    return events;
   },
 
   addEvent: async (event: CalendarEvent): Promise<boolean> => {
     try {
+      console.log('Attempting to create event:', event);
       const response = await fetch('/api/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(event),
+      });
+
+      console.log('Create event response:', {
+        status: response.status,
+        statusText: response.statusText,
       });
 
       if (response.status === 409) {
@@ -27,9 +47,13 @@ export const calendarService = {
       }
 
       if (!response.ok) {
-        throw new Error('Failed to create event');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Failed to create event: ${response.status} ${response.statusText}`);
       }
 
+      const result = await response.json();
+      console.log('Created event:', result);
       return true;
     } catch (error) {
       console.error('Error adding event:', error);
@@ -55,7 +79,9 @@ export const calendarService = {
       }
 
       if (!response.ok) {
-        throw new Error('Failed to update event');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Failed to update event: ${response.status} ${response.statusText}`);
       }
 
       return true;
@@ -73,7 +99,9 @@ export const calendarService = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete event');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Failed to delete event: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
       console.error('Error deleting event:', error);

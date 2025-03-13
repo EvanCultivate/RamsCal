@@ -3,6 +3,8 @@ import { format, startOfWeek, addDays, startOfDay, addHours, addWeeks, subWeeks,
 import { CalendarEvent } from '../types/calendar';
 import { calendarService } from '../services/calendarService';
 import EventForm from './EventForm';
+import EventDetails from './EventDetails';
+import PasswordProtection from './PasswordProtection';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const DAYS = Array.from({ length: 7 }, (_, i) => i);
@@ -13,11 +15,20 @@ export default function Calendar() {
     start: Date;
     end: Date;
   } | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    loadEvents();
+    // Check if user is already authenticated
+    const authenticated = localStorage.getItem('ramscal_authenticated') === 'true';
+    setIsAuthenticated(authenticated);
+    if (authenticated) {
+      loadEvents();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const loadEvents = async () => {
@@ -38,6 +49,11 @@ export default function Calendar() {
     setSelectedSlot({ start, end });
   };
 
+  const handleEventClick = (event: CalendarEvent, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedEvent(event);
+  };
+
   const handleEventSubmit = async (eventData: Omit<CalendarEvent, 'id'>) => {
     const newEvent: CalendarEvent = {
       ...eventData,
@@ -47,14 +63,13 @@ export default function Calendar() {
     if (await calendarService.addEvent(newEvent)) {
       await loadEvents();
       setSelectedSlot(null);
-    } else {
-      alert('This time slot overlaps with an existing event!');
     }
   };
 
   const handleEventDelete = async (id: string) => {
     await calendarService.deleteEvent(id);
     await loadEvents();
+    setSelectedEvent(null);
   };
 
   const navigateWeek = (direction: 'prev' | 'next' | 'today') => {
@@ -71,6 +86,10 @@ export default function Calendar() {
       }
     });
   };
+
+  if (!isAuthenticated) {
+    return <PasswordProtection onAuthenticate={() => setIsAuthenticated(true)} />;
+  }
 
   if (isLoading) {
     return (
@@ -147,14 +166,10 @@ export default function Calendar() {
                   .map(event => (
                     <div
                       key={event.id}
-                      className="bg-pink-300 text-white p-1 text-sm rounded flex justify-between items-center hover:bg-pink-400"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEventDelete(event.id);
-                      }}
+                      className="bg-pink-300 text-white p-1 text-sm rounded hover:bg-pink-400"
+                      onClick={(e) => handleEventClick(event, e)}
                     >
                       <span>{event.title}</span>
-                      <span className="text-xs opacity-75">×</span>
                     </div>
                   ))}
               </div>
@@ -169,6 +184,14 @@ export default function Calendar() {
           end={selectedSlot.end}
           onSubmit={handleEventSubmit}
           onCancel={() => setSelectedSlot(null)}
+        />
+      )}
+
+      {selectedEvent && (
+        <EventDetails
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onDelete={() => handleEventDelete(selectedEvent.id)}
         />
       )}
     </div>
