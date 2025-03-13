@@ -35,9 +35,15 @@ export default function Calendar() {
     setIsLoading(true);
     try {
       const storedEvents = await calendarService.getAllEvents();
+      if (!storedEvents) {
+        console.error('No events returned from API');
+        return;
+      }
       setEvents(Object.values(storedEvents));
     } catch (error) {
       console.error('Error loading events:', error);
+      // Add user-friendly error display
+      setEvents([]);
     } finally {
       setIsLoading(false);
     }
