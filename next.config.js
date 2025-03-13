@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverActions: {
-      allowedOrigins: ['*']
-    }
+    // Server Actions are enabled by default in Next.js 14
   }
 };
 
