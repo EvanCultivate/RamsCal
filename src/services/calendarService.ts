@@ -1,9 +1,13 @@
 import { CalendarEvent, CalendarEvents, NewCalendarEvent } from '../types/calendar';
 
+const BASE_URL = process.env.NEXT_PUBLIC_VERCEL_URL 
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+  : '';
+
 export const calendarService = {
   getAllEvents: async (): Promise<CalendarEvents> => {
     try {
-      const response = await fetch('/api/events');
+      const response = await fetch(`${BASE_URL}/api/events`);
       console.log('API Response:', {
         status: response.status,
         statusText: response.statusText,
@@ -12,7 +16,7 @@ export const calendarService = {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
-        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch events: ${response.status}`);
       }
 
       const events = await response.json();
@@ -34,7 +38,7 @@ export const calendarService = {
         updatedAt: new Date().toISOString()
       };
 
-      const response = await fetch('/api/events', {
+      const response = await fetch(`${BASE_URL}/api/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,7 +60,7 @@ export const calendarService = {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
-        throw new Error(`Failed to create event: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to create event: ${response.status}`);
       }
 
       const result = await response.json();
@@ -101,14 +105,14 @@ export const calendarService = {
 
   deleteEvent: async (id: string): Promise<void> => {
     try {
-      const response = await fetch(`/api/events?id=${id}`, {
+      const response = await fetch(`${BASE_URL}/api/events?id=${id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
-        throw new Error(`Failed to delete event: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to delete event: ${response.status}`);
       }
     } catch (error) {
       console.error('Error deleting event:', error);

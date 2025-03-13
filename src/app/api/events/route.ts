@@ -3,13 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { CalendarEvent } from '@/types/calendar';
 
 // Create a single PrismaClient instance and reuse it
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+const prisma = new PrismaClient();
 
 // Helper function to check for event overlap
 async function hasOverlap(newEvent: CalendarEvent, excludeId?: string): Promise<boolean> {
@@ -111,23 +105,17 @@ export async function POST(request: Request) {
     });
     console.log('Event created successfully:', createdEvent);
 
-    const formattedEvent = {
+    return NextResponse.json({
       ...createdEvent,
       start: createdEvent.start.toISOString(),
       end: createdEvent.end.toISOString(),
       createdAt: createdEvent.createdAt.toISOString(),
       updatedAt: createdEvent.updatedAt.toISOString(),
-    };
-
-    return NextResponse.json(formattedEvent);
+    });
   } catch (error) {
     console.error('Error in POST /api/events:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to create event', 
-        details: error instanceof Error ? error.message : 'Unknown error',
-        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
-      },
+      { error: 'Failed to create event' },
       { status: 500 }
     );
   }
@@ -192,7 +180,7 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error('Error deleting event:', error);
     return NextResponse.json(
-      { error: 'Failed to delete event', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to delete event' },
       { status: 500 }
     );
   }
